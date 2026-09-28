@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Настройки</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #1e2430; color: #e8ecf1; min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    background: #151a23; padding: 12px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #2c3a4f;
+  }
+  header .title { font-size: 20px; font-weight: 600; }
+
+  .wrap {
+    flex: 1; padding: 20px 24px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+    max-width: 1100px; width: 100%; margin: 0 auto;
+  }
+
+  .panel {
+    background: #232b38; border-radius: 10px; padding: 18px 22px;
+    border-left: 4px solid #455a64;
+  }
+  .panel h2 {
+    font-size: 16px; margin-bottom: 14px;
+    color: #cfd8dc; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .panel.danger { border-left-color: #b71c1c; }
+
+  label { display: block; font-size: 12px; color: #90a4ae;
+          margin: 8px 0 4px; }
+  input, select {
+    width: 100%; padding: 9px 12px; border-radius: 6px;
+    border: 1px solid #2c3a4f; background: #1a212b; color: #e8ecf1;
+    font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: #4fc3f7; }
+
+  button {
+    padding: 9px 18px; border: none; border-radius: 6px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: .15s;
+  }
+  .btn-primary { background: #2e7d32; color: #fff; }
+  .btn-primary:hover { background: #388e3c; }
+  .btn-secondary { background: #455a64; color: #fff; }
+  .btn-secondary:hover { background: #546e7a; }
+  .btn-danger { background: #b71c1c; color: #fff; }
+  .btn-danger:hover { background: #c62828; }
+  .btn-small { padding: 5px 10px; font-size: 12px; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin-top: 10px;
+  }
+  th, td {
+    padding: 9px 10px; text-align: left;
+    border-bottom: 1px solid #2c3a4f; font-size: 14px;
+  }
+  th { background: #1a212b; color: #90a4ae; font-size: 12px;
+       text-transform: uppercase; }
+  tr:hover td { background: #29323f; }
+
+  .row-form {
+    display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto;
+    gap: 10px; align-items: end; margin-top: 10px;
+  }
+
+  .msg { margin-top: 10px; font-size: 13px; }
+  .msg.ok  { color: #8bc34a; }
+  .msg.err { color: #ef5350; }
+
+  footer {
+    background: #151a23; padding: 10px 24px;
+    display: flex; gap: 20px; font-size: 13px;
+    border-top: 1px solid #2c3a4f;
+  }
+  footer a { color: #90a4ae; text-decoration: none; }
+  footer a:hover { color: #4fc3f7; }
+
+  .hint { font-size: 12px; color: #607d8b; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">⚙ Настройки</div>
+</header>
+
+<div class="wrap">
+
+  <!-- СОТРУДНИКИ -->
+  <div class="panel">
+    <h2>Сотрудники</h2>
+    <table id="tbl-people">
+      <thead>
+        <tr>
+          <th>Звание</th><th>ФИО</th><th>Статус</th>
+          <th style="width:90px;">ID</th>
+          <th style="width:160px;"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="row-form">
+      <div>
+        <label>Звание</label>
+        <input id="np-rank" placeholder="майор">
+      </div>
+      <div>
+        <label>ФИО</label>
+        <input id="np-fio" placeholder="Иванов Иван Иванович">
+      </div>
+      <div>
+        <label>Статус</label>
+        <select id="np-status">
+          <option value="present">На лицо</option>
+          <option value="vacation">Отпуск</option>
+          <option value="trip">Командировка</option>
+          <option value="duty">Дежурство</option>
+          <option value="sick">Болен</option>
+        </select>
+      </div>
+      <div></div>
+      <button class="btn-primary" onclick="addPerson()">+ Добавить</button>
+    </div>
+    <div class="msg" id="msg-people"></div>
+  </div>
+
+  <!-- ПАРОЛЬ -->
+  <div class="panel">
+    <h2>Пароль дежурного</h2>
+    <div class="row-form" style="grid-template-columns: 1fr 1fr auto;">
+      <div>
+        <label>Текущий пароль</label>
+        <input id="pwd-old" type="password">
+      </div>
+      <div>
+        <label>Новый пароль</label>
+        <input id="pwd-new" type="password">
+      </div>
+      <button class="btn-primary" onclick="changePassword()">Сменить</button>
+    </div>
+    <div class="hint">Минимум 4 символа. Пароль хранится в БД в открытом виде — для учебного проекта.</div>
+    <div class="msg" id="msg-pwd"></div>
+  </div>
+
+  <!-- ОПАСНЫЕ ДЕЙСТВИЯ -->
+  <div class="panel danger">
+    <h2>⚠ Опасные действия</h2>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn-secondary" onclick="confirmDanger('clear_journal','Очистить журнал действий?')">
+        Очистить журнал
+      </button>
+      <button class="btn-secondary" onclick="confirmDanger('clear_reports','Удалить все отчёты (историю сессий)?')">
+        Очистить отчёты
+      </button>
+      <button class="btn-danger" onclick="confirmDanger('factory_reset','Полный сброс? Будут удалены ВСЕ сотрудники, сессии и журнал.')">
+        Полный сброс
+      </button>
+    </div>
+    <div class="hint">Действия необратимы. После сброса нужно заново добавить сотрудников.</div>
+    <div class="msg" id="msg-danger"></div>
+  </div>
+
+</div>
+
+<footer>
+  <a href="/">← На главную</a>
+  <a href="/reports">Отчёты</a>
+  <a href="/journal">Журнал действий</a>
+</footer>
+
+<script>
+const api = async (url, data) => {
+  const r = await fetch(url, {
+    method: data ? 'POST' : 'GET',
+    headers: {'Content-Type': 'application/json'},
+    body: data ? JSON.stringify(data) : undefined
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+};
+
+const STATUS_LABEL = {
+  present:'На лицо', notified:'Оповещен', arrived:'Прибыл',
+  vacation:'Отпуск', trip:'Командировка', duty:'Дежурство', sick:'Болен'
+};
+
+const showMsg = (id, text, ok) => {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  setTimeout(() => { el.textContent = ''; }, 3000);
+};
+
+// ---------- Сотрудники ----------
+
+async function loadPeople() {
+  const data = await api('/api/people');
+  const tb = document.querySelector('#tbl-people tbody');
+
+  tb.innerHTML = data.rows.map(p => `
+    <tr data-id="${p.id}">
+      <td>${p.rank}</td>
+      <td>${p.fio}</td>
+      <td>${STATUS_LABEL[p.status] || p.status}</td>
+      <td>${p.id}</td>
+      <td>
+        <button class="btn-secondary btn-small" onclick="editPerson(${p.id})">Ред.</button>
+        <button class="btn-danger btn-small" onclick="deletePerson(${p.id}, '${p.fio.replace(/'/g,"\\'")}')">Удал.</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:#607d8b;">Пусто</td></tr>';
+}
+
+async function addPerson() {
+  const rank   = document.getElementById('np-rank').value.trim();
+  const fio    = document.getElementById('np-fio').value.trim();
+  const status = document.getElementById('np-status').value;
+
+  if (!rank || !fio) return showMsg('msg-people', 'Заполните звание и ФИО', false);
+
+  try {
+    await api('/api/people/add', {rank, fio, status});
+    document.getElementById('np-rank').value = '';
+    document.getElementById('np-fio').value = '';
+    showMsg('msg-people', 'Добавлено', true);
+    loadPeople();
+  } catch (e) {
+    showMsg('msg-people', e.message, false);
+  }
+}
+
+async function editPerson(id) {
+  const row  = document.querySelector(`tr[data-id="${id}"]`);
+  const cur  = row.querySelectorAll('td');
+  const rank = prompt('Звание:', cur[0].textContent);
+  if (rank === null) return;
+  const fio  = prompt('ФИО:', cur[1].textContent);
+  if (fio === null) return;
+
+  try {
+    await api('/api/people/update', {id, rank, fio});
+    showMsg('msg-people', 'Сохранено', true);
+    loadPeople();
+  } catch (e) {
+    showMsg('msg-people', e.message, false);
+  }
+}
+
+async function deletePerson(id, fio) {
+  if (!confirm(`Удалить «${fio}»?`)) return;
+  try {
+    await api('/api/people/delete', {id});
+    showMsg('msg-people', 'Удалён', true);
+    loadPeople();
+  } catch (e) {
+    showMsg('msg-people', e.message, false);
+  }
+}
+
+// ---------- Пароль ----------
+
+async function changePassword() {
+  const oldP = document.getElementById('pwd-old').value;
+  const newP = document.getElementById('pwd-new').value;
+
+  try {
+    await api('/api/password', {old: oldP, new: newP});
+    document.getElementById('pwd-old').value = '';
+    document.getElementById('pwd-new').value = '';
+    showMsg('msg-pwd', 'Пароль изменён', true);
+  } catch (e) {
+    showMsg('msg-pwd', e.message, false);
+  }
+}
+
+// ---------- Опасные действия ----------
+
+async function confirmDanger(endpoint, text) {
+  if (!confirm(text)) return;
+  try {
+    await api('/api/' + endpoint, {});
+    showMsg('msg-danger', 'Выполнено', true);
+    if (endpoint === 'factory_reset') loadPeople();
+  } catch (e) {
+    showMsg('msg-danger', e.message, false);
+  }
+}
+
+// ---------- Старт ----------
+
+loadPeople();
+</script>
+</body>
+</html>

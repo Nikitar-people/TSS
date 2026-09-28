@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Вход</title>
+<style>
+  body { font-family: Arial; background:#1e2430; color:#e8ecf1;
+         display:flex; height:100vh; align-items:center; justify-content:center; }
+  form { background:#232b38; padding:30px; border-radius:10px; width:300px; }
+  input, button { width:100%; padding:10px; margin-top:8px;
+                  box-sizing:border-box; border-radius:6px; border:none; }
+  input { background:#1a212b; color:#fff; }
+  button { background:#2e7d32; color:#fff; cursor:pointer; }
+  .err { color:#ef5350; margin-top:10px; }
+</style></head>
+<body>
+<form method="post">
+  <h2>Вход дежурного</h2>
+  <input type="password" name="password" placeholder="Пароль" autofocus>
+  <button>Войти</button>
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+</form>
+</body></html>

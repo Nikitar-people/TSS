@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Отчёты</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #1e2430; color: #e8ecf1; min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    background: #151a23; padding: 12px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #2c3a4f;
+  }
+  header .title { font-size: 20px; font-weight: 600; }
+  header .meta  { font-size: 14px; color: #90a4ae; }
+
+  .wrap {
+    flex: 1; padding: 20px 24px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+    max-width: 1300px; width: 100%; margin: 0 auto;
+  }
+
+  /* ---------- KPI ---------- */
+  .kpi {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .kpi .card {
+    background: #232b38; border-radius: 10px;
+    padding: 14px 18px; text-align: center;
+    border-left: 4px solid #455a64;
+  }
+  .kpi .num { font-size: 28px; font-weight: 700; }
+  .kpi .lbl { font-size: 12px; color: #90a4ae; margin-top: 4px; }
+  .kpi .c1 { border-left-color: #607d8b; }
+  .kpi .c2 { border-left-color: #4fc3f7; }
+  .kpi .c3 { border-left-color: #ffc107; }
+  .kpi .c4 { border-left-color: #8bc34a; }
+  .kpi .c5 { border-left-color: #ef5350; }
+
+  /* ---------- ПАНЕЛИ ---------- */
+  .panel {
+    background: #232b38; border-radius: 10px;
+    padding: 18px 22px; border-left: 4px solid #455a64;
+  }
+  .panel h2 {
+    font-size: 15px; margin-bottom: 14px;
+    color: #cfd8dc; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .btn-clear {
+  background: rgba(183, 28, 28, .25);
+  color: #ef9a9a;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: .15s;
+ } 
+ .btn-clear:hover {
+  background: rgba(183, 28, 28, .7);
+  color: #fff;
+ }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    padding: 10px 12px; text-align: left;
+    border-bottom: 1px solid #2c3a4f; font-size: 14px;
+  }
+  th {
+    background: #1a212b; color: #90a4ae;
+    font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+  }
+  tr:hover td { background: #29323f; }
+  tr.active td { background: #1f3a2a; }
+  tr.active:hover td { background: #244a33; }
+
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .pct { color: #4fc3f7; }
+
+  .badge {
+    padding: 3px 10px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge.active { background: #2e7d32; color: #fff; }
+  .badge.closed { background: #455a64; color: #cfd8dc; }
+  .badge.good   { background: #2e7d32; color: #fff; }
+  .badge.ok     { background: #ffc107; color: #333; }
+  .badge.bad    { background: #b71c1c; color: #fff; }
+  .badge.absent { background: #455a64; color: #cfd8dc; }
+
+  .empty { text-align: center; padding: 30px; color: #607d8b; }
+
+  footer {
+    background: #151a23; padding: 10px 24px;
+    display: flex; gap: 20px; font-size: 13px;
+    border-top: 1px solid #2c3a4f;
+  }
+  footer a { color: #90a4ae; text-decoration: none; }
+  footer a:hover { color: #4fc3f7; }
+
+  .filters {
+    display: flex; gap: 10px; margin-bottom: 14px;
+  }
+  .filters button {
+    padding: 6px 14px; border: none; border-radius: 5px;
+    background: #2c3a4f; color: #cfd8dc; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+  }
+  .filters button.on { background: #4fc3f7; color: #0d1117; }
+  .filters button:hover { background: #3a4a60; }
+  .filters button.on:hover { background: #6dd1ff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">📊 Отчёты</div>
+  <div class="meta" id="updated">—</div>
+</header>
+
+<div class="wrap">
+
+    <!-- KPI -->
+    <div class="kpi">
+      <div class="card c1"><div class="num" id="k-sessions">0</div><div class="lbl">Всего сессий</div></div>
+      <div class="card c2"><div class="num" id="k-closed">0</div>  <div class="lbl">Завершено</div></div>
+      <div class="card c3"><div class="num" id="k-people">0</div>  <div class="lbl">Оповещено всего</div></div>
+      <div class="card c4"><div class="num" id="k-arrived">0</div> <div class="lbl">Прибыло всего</div></div>
+      <div class="card c5"><div class="num" id="k-pct">0%</div>    <div class="lbl">Средний % прибытия</div></div>
+    </div>
+  
+    <!-- СЕССИИ -->
+    <div class="panel">
+      <h2>История сессий оповещения</h2>
+  
+      <div class="filters">
+        <button data-filter="all"   class="on">Все</button>
+        <button data-filter="active">Активные</button>
+        <button data-filter="closed">Завершённые</button>
+      </div>
+  
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;">#</th>
+            <th>Начало</th>
+            <th>Окончание</th>
+            <th>Длительность</th>
+            <th>Всего</th>
+            <th>Прибыло</th>
+            <th>% прибытия</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody id="t-sessions">
+          <tr><td colspan="8" class="empty">Загрузка…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  
+    <!-- ТЕКУЩАЯ СЕССИЯ -->
+    <div class="panel">
+      <h2>Статистика по сотрудникам (текущая сессия)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Звание</th>
+            <th>ФИО</th>
+            <th>Оповещён</th>
+            <th>Прибыл</th>
+            <th>Задержка</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody id="t-people">
+          <tr><td colspan="6" class="empty">Загрузка…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  
+    <!-- ЗА ВСЁ ВРЕМЯ -->
+    <div class="panel">
+      <h2>Статистика по сотрудникам (за всё время)</h2>
+  
+      <table>
+        <thead>
+          <tr>
+            <th>Звание</th>
+            <th>ФИО</th>
+            <th>Сейчас</th>
+            <th title="Сколько раз участвовал">Всего</th>
+            <th>Прибыл</th>
+            <th>Не прибыл</th>
+            <th>Отпуск</th>
+            <th>Команд.</th>
+            <th>Болен</th>
+            <th>% прибытия</th>
+            <th>Ср. задержка</th>
+            <th>Мин.</th>
+            <th>Макс.</th>
+            <th style="width:60px;"></th> 
+          </tr>
+        </thead>
+        <tbody id="t-people-all">    <!-- ← УНИКАЛЬНЫЙ id -->
+          <tr><td colspan="14" class="empty">Загрузка…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  
+  </div>
+<footer>
+  <a href="/">← На главную</a>
+  <a href="/journal">Журнал действий</a>
+  <a href="/settings">Настройки</a>
+</footer>
+<script>
+const api = async (url) => {
+    const r = await fetch(url);
+    return r.json();
+  };
+  
+  const STATUS_LABEL = {
+    present:'На лицо', notified:'Оповещен', arrived:'Прибыл',
+    vacation:'Отпуск', trip:'Командировка', duty:'Дежурство', sick:'Болен'
+  };
+  
+  const pctClass = (p) => p >= 90 ? 'good' : p >= 60 ? 'ok' : 'bad';
+  
+  let allSessions = [];
+  let filter = 'all';
+  
+  // ---------- KPI ----------
+  async function loadSummary() {
+    const d = await api('/api/reports/summary');
+    document.getElementById('k-sessions').textContent = d.sessions;
+    document.getElementById('k-closed').textContent   = d.closed;
+    document.getElementById('k-people').textContent   = d.people;
+    document.getElementById('k-arrived').textContent  = d.arrived;
+    document.getElementById('k-pct').textContent      = d.avg_pct + '%';
+  }
+  
+  // ---------- Сессии ----------
+  function renderSessions() {
+    const tb = document.getElementById('t-sessions');
+    const rows = allSessions.filter(s => {
+      if (filter === 'active') return s.active;
+      if (filter === 'closed') return !s.active;
+      return true;
+    });
+  
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="8" class="empty">Нет данных</td></tr>';
+      return;
+    }
+  
+    tb.innerHTML = rows.map((s, i) => `
+      <tr class="${s.active ? 'active' : ''}">
+        <td class="num">${rows.length - i}</td>
+        <td>${s.started_at || '—'}</td>
+        <td>${s.ended_at   || '—'}</td>
+        <td class="num">${s.duration || '—'}</td>
+        <td class="num">${s.total}</td>
+        <td class="num">${s.arrived}</td>
+        <td class="num pct">${s.percent}%</td>
+        <td>
+          ${s.active
+            ? '<span class="badge active">Идёт</span>'
+            : `<span class="badge ${pctClass(s.percent)}">${s.percent}%</span>`}
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  async function loadSessions() {
+    const d = await api('/api/reports/sessions');
+    allSessions = d.rows;
+    renderSessions();
+  }
+  
+  // ---------- Текущая сессия ----------
+  async function loadPeople() {
+    const d = await api('/api/reports/people');
+    const tb = document.getElementById('t-people');
+  
+    if (!d.rows.length) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">Нет сотрудников</td></tr>';
+      return;
+    }
+  
+    tb.innerHTML = d.rows.map(p => `
+      <tr>
+        <td>${p.rank}</td>
+        <td>${p.fio}</td>
+        <td>${p.notified_at || '—'}</td>
+        <td>${p.arrived_at  || '—'}</td>
+        <td class="num">${p.delay || '—'}</td>
+        <td><span class="badge status-${p.status}">${STATUS_LABEL[p.status] || p.status}</span></td>
+      </tr>
+    `).join('');
+  }
+  
+  // ---------- За всё время ----------
+  async function loadPeopleAll() {
+  const d = await api('/api/reports/people_all');
+  const tb = document.getElementById('t-people-all');
+
+  if (!d.rows.length) {
+    tb.innerHTML = '<tr><td colspan="14" class="empty">Нет сотрудников</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = d.rows.map(p => `
+    <tr>
+      <td>${p.rank}</td>
+      <td>${p.fio}</td>
+      <td><span class="badge status-${p.current_status}">${STATUS_LABEL[p.current_status] || p.current_status}</span></td>
+      <td class="num">${p.invited}</td>
+      <td class="num good-num">${p.arrived}</td>
+      <td class="num bad-num">${p.absent}</td>
+      <td class="num muted">${p.vacation}</td>
+      <td class="num muted">${p.trip}</td>
+      <td class="num muted">${p.sick}</td>
+      <td class="num pct">${p.pct}%</td>
+      <td class="num">${p.avg_delay || '—'}</td>
+      <td class="num min">${p.min_delay || '—'}</td>
+      <td class="num max">${p.max_delay || '—'}</td>
+      <td>
+        <button class="btn-clear"
+                title="Очистить историю этого сотрудника"
+                onclick="clearHistory(${p.id}, '${p.fio.replace(/'/g,"\\'")}')">
+          🧽
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+  
+
+
+
+
+
+
+async function clearHistory(id, fio) {
+  if (!confirm(
+    `Очистить всю историю оповещений для «${fio}»?\n\n` +
+    `Будут удалены записи за все прошлые сессии.\n` +
+    `Активная сессия и сам сотрудник останутся.`
+  )) return;
+
+  const r = await fetch('/api/people/clear_history', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id})
+  });
+
+  const data = await r.json();
+
+  if (!r.ok || data.ok === false) {
+    alert(data.error || 'Не удалось очистить');
+    return;
+  }
+
+  // если чистим не из сессии — здесь просто перезагрузим таблицу
+  loadPeopleAll();
+  loadSummary();   // если KPI у вас пересчитывается из Notification
+}
+
+
+
+
+  // ---------- Фильтр ----------
+  document.querySelectorAll('.filters button').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.filters button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      filter = b.dataset.filter;
+      renderSessions();
+    };
+  });
+  
+  // ---------- Обновление ----------
+  async function refreshAll() {
+    await Promise.all([
+      loadSummary(),
+      loadSessions(),
+      loadPeople(),
+      loadPeopleAll(),      // ← теперь вызывается
+    ]);
+    document.getElementById('updated').textContent =
+      'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+  }
+  
+  refreshAll();
+  setInterval(refreshAll, 10000);
+</script>
+</body>
+</html>

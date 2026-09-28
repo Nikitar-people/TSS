@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang = 'ru'>
+  <head>
+    <title>{% block title %}{% endblock %}Первый сайт</title>
+    <style>
+        /* ---------- БАЗА ---------- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: "Segoe UI", Arial, sans-serif;
+          background: #1e2430;
+          color: #e8ecf1;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        /* ---------- ШАПКА ---------- */
+        header {
+          background: #151a23;
+          padding: 12px 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 2px solid #2c3a4f;
+        }
+        header .title { font-size: 20px; font-weight: 600; letter-spacing: .5px; }
+        header .meta { display: flex; gap: 24px; align-items: center; font-size: 15px; }
+        header .meta .clock { font-variant-numeric: tabular-nums; font-weight: 600; }
+        header .role {
+          padding: 4px 12px; border-radius: 12px; font-size: 13px;
+          background: #2c3a4f; color: #9fb3c8;
+        }
+        header .role.duty { background: #7a4a1e; color: #ffd9a8; }
+        
+        /* ---------- ПАНЕЛЬ УПРАВЛЕНИЯ ---------- */
+        .control-bar {
+          display: flex; align-items: center; gap: 16px;
+          padding: 14px 24px; background: #232b38;
+          border-bottom: 1px solid #2c3a4f;
+        }
+        .control-bar button {
+          padding: 12px 22px; border: none; border-radius: 6px;
+          font-size: 15px; font-weight: 600; cursor: pointer;
+          transition: .15s;
+        }
+        .btn-start  { background: #2e7d32; color: #fff; }
+        .btn-start:hover  { background: #388e3c; }
+        .btn-stop   { background: #b71c1c; color: #fff; }
+        .btn-stop:hover   { background: #c62828; }
+        .btn-reset  { background: #455a64; color: #fff; }
+        .btn-reset:hover  { background: #546e7a; }
+        .control-bar button:disabled { opacity: .4; cursor: not-allowed; }
+        
+        .timer {
+          margin-left: auto;
+          font-size: 38px; font-weight: 700;
+          font-variant-numeric: tabular-nums;
+          color: #4fc3f7; letter-spacing: 2px;
+          text-shadow: 0 0 12px rgba(79,195,247,.4);
+        }
+        .timer.idle { color: #607d8b; text-shadow: none; }
+        
+        /* ---------- СВОДКА ---------- */
+        .summary {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 12px;
+          padding: 16px 24px;
+          background: #1a212b;
+        }
+        .summary .card {
+          background: #232b38; border-radius: 8px;
+          padding: 12px 16px; text-align: center;
+          border-left: 4px solid #455a64;
+        }
+        .summary .card .num { font-size: 26px; font-weight: 700; }
+        .summary .card .lbl { font-size: 12px; color: #90a4ae; margin-top: 4px; }
+        .summary .card.total   { border-left-color: #607d8b; }
+        .summary .card.present { border-left-color: #ffc107; }
+        .summary .card.notified{ border-left-color: #795548; }
+        .summary .card.arrived { border-left-color: #8bc34a; }
+        .summary .card.absent  { border-left-color: #ef5350; }
+        .summary .card.percent { border-left-color: #4fc3f7; }
+        
+        /* ---------- СЕТКА КАРТОЧЕК ---------- */
+        .grid {
+          flex: 1;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 12px;
+          padding: 16px 24px;
+          overflow-y: auto;
+        }
+        
+        .person {
+          border-radius: 10px;
+          padding: 12px;
+          display: flex; flex-direction: column; gap: 6px;
+          color: #1a1a1a;
+          position: relative;
+          transition: transform .15s, box-shadow .15s;
+          min-height: 150px;
+        }
+        .person:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+        
+        .person .rank  { font-size: 12px; opacity: .75; text-transform: uppercase; letter-spacing: .5px; }
+        .person .fio   { font-size: 15px; font-weight: 700; line-height: 1.25; }
+        .person .status {
+          font-size: 12px; font-weight: 600;
+          padding: 2px 8px; border-radius: 10px;
+          background: rgba(0,0,0,.15);
+          align-self: flex-start;
+          margin-top: 4px;
+        }
+        .person .times { font-size: 11px; margin-top: auto; opacity: .85; line-height: 1.4; }
+        .person .actions { display: flex; gap: 6px; margin-top: 6px; }
+        .person .actions button {
+          flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 600;
+          border: none; border-radius: 5px; cursor: pointer;
+          background: rgba(0,0,0,.2); color: inherit;
+        }
+        .person .actions button.btn-del {
+          flex: 0 0 32px;
+          background: rgba(183, 28, 28, .35);
+          font-size: 13px;
+          }       
+        .person .actions button.btn-del:hover {
+            background: rgba(183, 28, 28, .7);
+            color: #fff;
+          }
+        .person .actions button:hover { background: rgba(0,0,0,.35); }
+        .person .actions button:disabled { opacity: .3; cursor: not-allowed; }
+        
+        .person select {
+          font-size: 11px; padding: 4px; border-radius: 5px;
+          border: 1px solid rgba(0,0,0,.2); background: rgba(255,255,255,.5);
+          cursor: pointer;
+        }
+        
+        /* ---------- ЦВЕТА СТАТУСОВ ---------- */
+        .st-present   { background: #ffc107; } /* на лицо    — жёлтый     */
+        .st-notified  { background: #a1887f; color:#fff; } /* оповещен — коричневый */
+        .st-arrived   { background: #8bc34a; } /* прибыл     — салатовый  */
+        .st-vacation  { background: #9c27b0; color:#fff; } /* отпуск     — фиолетовый */
+        .st-trip      { background: #2196f3; color:#fff; } /* командировка — синий */
+        .st-duty      { background: #4caf50; color:#fff; } /* дежурство  — зелёный   */
+        .st-sick      { background: #ff9800; } /* болен      — оранжевый  */
+        
+        /* ---------- ПОДВАЛ ---------- */
+        footer {
+          background: #151a23; padding: 10px 24px;
+          display: flex; gap: 20px; font-size: 13px;
+          border-top: 1px solid #2c3a4f;
+        }
+        footer a { color: #90a4ae; text-decoration: none; }
+        footer a:hover { color: #4fc3f7; }
+        </style>
+  </head>
+  <body>
+    {% block content %}
+    <header>
+        <div class = "title">Табло оповещения</div>
+        <div class = "meta">
+            <span class = "clock" id="clock">-:-:-</span>
+            {% if role == 'duty' %}
+            <span class="role duty">Дежурный: {{ user_fio }}</span>
+          {% else %}
+            <span class="role">Наблюдатель</span>
+          {% endif %}
+        </div>
+    </header>
+
+
+    <div class="control-bar">
+        <button id="btn-start" class="btn-start">▶ Объявить прибытие</button>
+        <button id="btn-stop"  class="btn-stop"  disabled>■ Остановить учёт</button>
+        <button id="btn-reset" class="btn-reset" disabled>↺ Сбросить статусы</button>
+        <div class="timer idle" id="timer">00:00:00</div>
+      </div>
+
+      <div class="summary">
+        <div class="card total">   <div class="num" id="s-total">0</div>  <div class="lbl">Всего</div></div>
+        <div class="card present"> <div class="num" id="s-present">0</div><div class="lbl">На лицо</div></div>
+        <div class="card notified"><div class="num" id="s-notified">0</div><div class="lbl">Оповещено</div></div>
+        <div class="card arrived"> <div class="num" id="s-arrived">0</div><div class="lbl">Прибыло</div></div>
+        <div class="card absent">  <div class="num" id="s-absent">0</div> <div class="lbl">Не прибыло</div></div>
+        <div class="card percent"> <div class="num" id="s-percent">0%</div><div class="lbl">Прибытие</div></div>
+      </div>
+
+        <!--Сетка карточек-->
+      <div class="grid" id="grid">
+        <!-- заполняется JS -->
+      </div>
+
+
+
+      <footer>
+        
+          <a href="/reports">Отчёты</a>
+          <a href="/settings">Настройки</a>
+          <a href="/journal">Журнал действий</a>
+          {% if role == 'duty' %}
+          <a href="/logout" style="margin-left:auto;">Выход</a>
+          {% else %}
+          <a href="/login" style="margin-left:auto;">Вход для дежурного</a>
+          {% endif %}
+        
+        <!-- <a href="/logout" style="margin-left:auto;">Выход</a> -->
+      </footer>
+      
+      <audio id="beep" preload="auto"></audio>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <script>
+        const api = async (url, data) => {
+          const r = await fetch(url, {
+            method: data ? 'POST' : 'GET',
+            headers: {'Content-Type': 'application/json'},
+            body: data ? JSON.stringify(data) : undefined
+          });
+          return r.json();
+        };
+        
+        let lastState = {active: false, started: null};
+        let timerId = null;
+        
+        const fmt = (ms) => {
+          const s = Math.floor(ms/1000);
+          const h = String(Math.floor(s/3600)).padStart(2,'0');
+          const m = String(Math.floor(s%3600/60)).padStart(2,'0');
+          const ss = String(s%60).padStart(2,'0');
+          return `${h}:${m}:${ss}`;
+        };
+        
+        function tick() {
+          if (!lastState.active || !lastState.started) {
+            document.getElementById('timer').textContent = '00:00:00';
+            document.getElementById('timer').classList.add('idle');
+            return;
+          }
+          const started = new Date(lastState.started + 'Z');
+          document.getElementById('timer').textContent = fmt(Date.now() - started);
+          document.getElementById('timer').classList.remove('idle');
+        }
+        
+        const STATUS_LABEL = {
+          present:'На лицо', notified:'Оповещен', arrived:'Прибыл',
+          vacation:'Отпуск', trip:'Командировка', duty:'Дежурство', sick:'Болен'
+        };
+        
+        function render(state) {
+          const grid = document.getElementById('grid');
+          grid.innerHTML = '';
+          const counts = {total: state.rows.length, present:0, notified:0, arrived:0, absent:0};
+        
+          for (const p of state.rows) {
+            counts[p.status] = (counts[p.status] || 0) + 1;
+            if (['vacation','trip','duty','sick'].includes(p.status)) counts.absent++;
+        
+            const el = document.createElement('div');
+            el.className = `person st-${p.status}`;
+            el.innerHTML = `
+              <div class="rank">${p.rank}</div>
+              <div class="fio">${p.fio}</div>
+              <div class="status">${STATUS_LABEL[p.status] || p.status}</div>
+              <div class="times">
+                ${p.notified_at ? 'Оповещён: '+p.notified_at+'<br>' : ''}
+                ${p.arrived_at  ? 'Прибыл: '+p.arrived_at : ''}
+              </div>
+              <select data-id="${p.id}">
+                ${Object.entries(STATUS_LABEL).map(([k,v]) =>
+                  `<option value="${k}" ${k===p.status?'selected':''}>${v}</option>`).join('')}
+              </select>
+              <div class="actions">
+                <button data-act="notify" data-id="${p.id}" ${p.status!=='present'?'disabled':''}>Оповестить</button>
+                <button data-act="arrive" data-id="${p.id}" ${p.status!=='notified'?'disabled':''}>Прибыл</button>
+                
+              </div>`;
+            grid.appendChild(el);
+          }
+        
+          document.getElementById('s-total').textContent = counts.total;
+          document.getElementById('s-present').textContent = counts.present;
+          document.getElementById('s-notified').textContent = counts.notified;
+          document.getElementById('s-arrived').textContent = counts.arrived;
+          document.getElementById('s-absent').textContent = counts.absent;
+          const denom = counts.total - counts.absent;
+          document.getElementById('s-percent').textContent =
+            denom ? Math.round(counts.arrived / denom * 100) + '%' : '0%';
+        }
+        
+        async function refresh() {
+          const st = await api('/api/state');
+          lastState = st;
+          render(st);
+          document.getElementById('btn-start').disabled = st.active;
+          document.getElementById('btn-stop').disabled  = !st.active;
+          document.getElementById('btn-reset').disabled = false;
+          tick();
+        }
+        
+        document.getElementById('btn-start').onclick = async () => { await api('/api/start', {}); refresh(); };
+        document.getElementById('btn-stop').onclick  = async () => { await api('/api/stop',  {}); refresh(); };
+        document.getElementById('btn-reset').onclick = async () => { await api('/api/reset', {}); refresh(); };
+        
+        document.getElementById('grid').addEventListener('click', async (e) => {
+          const b = e.target.closest('button[data-act]');
+          if (!b) return;
+          const id = +b.dataset.id;
+          if (b.dataset.act === 'notify') await api('/api/notify', {person_id: id});
+          if (b.dataset.act === 'arrive') await api('/api/arrive', {person_id: id});
+          refresh();
+        });
+        
+        document.getElementById('grid').addEventListener('change', async (e) => {
+          if (e.target.tagName !== 'SELECT') return;
+          await api('/api/location', {person_id: +e.target.dataset.id, status: e.target.value});
+          refresh();
+        });
+        
+        function clock() {
+          document.getElementById('clock').textContent =
+            new Date().toLocaleTimeString('ru-RU');
+        }
+        setInterval(clock, 1000); clock();
+        
+        setInterval(tick, 1000);
+        setInterval(refresh, 5000);
+        refresh();
+        </script>
+    {% endblock %}
+
+  </body>
+</html>

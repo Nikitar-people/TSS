@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Журнал действий</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #1e2430; color: #e8ecf1; min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    background: #151a23; padding: 12px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #2c3a4f;
+  }
+  header .title { font-size: 20px; font-weight: 600; }
+  header .meta  { font-size: 14px; color: #90a4ae; }
+
+  .wrap { flex: 1; padding: 20px 24px; overflow-y: auto; }
+
+  table {
+    width: 100%; border-collapse: collapse;
+    background: #232b38; border-radius: 10px; overflow: hidden;
+  }
+  th, td {
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid #2c3a4f; font-size: 14px;
+    vertical-align: top;
+  }
+  th {
+    background: #1a212b; color: #90a4ae;
+    text-transform: uppercase; font-size: 12px; letter-spacing: .5px;
+  }
+  tr:hover td { background: #29323f; }
+  .time { color: #90a4ae; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fio  { color: #e8ecf1; font-weight: 600; }
+  .det  { color: #b0bec5; font-size: 13px; }
+
+  .act-start  { color: #66bb6a; }
+  .act-stop   { color: #ef5350; }
+  .act-reset  { color: #90a4ae; }
+  .act-notify { color: #ffc107; }
+  .act-arrive { color: #8bc34a; }
+  .act-status_change { color: #4fc3f7; }
+  .act-login  { color: #ba68c8; }
+  .act-logout { color: #ba68c8; }
+
+  .empty { text-align: center; padding: 40px; color: #607d8b; }
+
+  footer {
+    background: #151a23; padding: 10px 24px;
+    display: flex; gap: 20px; font-size: 13px;
+    border-top: 1px solid #2c3a4f;
+  }
+  footer a { color: #90a4ae; text-decoration: none; }
+  footer a:hover { color: #4fc3f7; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">📜 Журнал действий</div>
+  <div class="meta" id="updated">—</div>
+</header>
+
+<div class="wrap">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:180px;">Время</th>
+        <th style="width:220px;">Действие</th>
+        <th>Сотрудник</th>
+        <th>Детали</th>
+      </tr>
+    </thead>
+    <tbody id="rows">
+      <tr><td colspan="4" class="empty">Загрузка…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  <a href="/">← На главную</a>
+  <a href="/reports">Отчёты</a>
+  <a href="/settings">Настройки</a>
+</footer>
+
+<script>
+async function load() {
+  const r = await fetch('/api/journal?limit=200');
+  const data = await r.json();
+  const tbody = document.getElementById('rows');
+
+  if (!data.rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Журнал пуст</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.rows.map(a => `
+    <tr>
+      <td class="time">${a.time}</td>
+      <td class="act-${a.action}">${a.action_label}</td>
+      <td class="fio">${a.person_fio || '—'}</td>
+      <td class="det">${a.details || ''}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('updated').textContent =
+    'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+}
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>
